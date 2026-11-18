@@ -1,0 +1,43 @@
+
+name: Node.js CI Pipeline
+
+# Events that trigger this workflow
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+# Jobs executed by this workflow
+jobs:
+  build-and-test:
+
+    # Operating system for the runner
+    runs-on: ubuntu-latest
+
+    # Individual tasks
+    steps:
+
+      # 1. Download repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build application
+      - name: Build application
+        run: npm run build
+
+      # 5. Run automated tests
+      - name: Run tests
+        run: npm test
