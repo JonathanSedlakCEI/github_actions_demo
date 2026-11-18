@@ -19,4 +19,11 @@ describe('API Tests', () => {
         expect(response.body.status).toBe('OK');
     });
 
+    test('GET /about should return application information', async () => {
+        const response = await request(app).get('/about');
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.application).toBe('GitHub Actions Demo');
+    }) 
+
 });
