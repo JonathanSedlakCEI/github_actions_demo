@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>Document Library</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/config.js"></script>
+    <script src="/app.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-content">
+            <a class="brand" href="/" aria-label="Document Library home">
+                <span class="brand-mark" aria-hidden="true">D</span>
+                <span>Workspace</span>
+            </a>
+            <span class="header-label">Knowledge center</span>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <section class="intro" aria-labelledby="page-title">
+            <p class="eyebrow">YOUR TEAM'S FILES</p>
+            <h1 id="page-title">Document Library</h1>
+            <p class="intro-copy">Find the latest resources, policies, and working documents in one place.</p>
+        </section>
+
+        <section class="library" aria-label="Documents">
+            <div class="library-toolbar">
+                <div>
+                    <h2>All documents</h2>
+                    <p id="result-count" class="result-count" aria-live="polite"></p>
+                </div>
+                <div class="filters">
+                    <label class="search-field">
+                        <span class="visually-hidden">Search documents by name</span>
+                        <span class="search-icon" aria-hidden="true"></span>
+                        <input id="search-input" type="search" placeholder="Search documents" autocomplete="off">
+                    </label>
+                    <label>
+                        <span class="visually-hidden">Filter by category</span>
+                        <select id="category-filter">
+                            <option value="">All categories</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <p id="loading-message" class="status-message" role="status">Loading documents…</p>
+            <p id="error-message" class="status-message error-message" role="alert" hidden></p>
+            <p id="empty-message" class="status-message" hidden>No documents match your search. Try another name or category.</p>
+            <div id="document-list" class="document-grid" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>Document Library <span aria-hidden="true">·</span> A shared home for team knowledge</p>
+    </footer>
+</body>
+</html>
