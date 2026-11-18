@@ -19,4 +19,11 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/about', (req, res) => {
+    res.json({
+        application: 'GitHub Actions Demo',
+        version: '1.0.0'
+    });
+});
+
 module.exports = app;
