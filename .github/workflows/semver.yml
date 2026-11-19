@@ -1,23 +1,23 @@
-name: Approved PR SemVer
+name: Merged PR SemVer
 
 on:
-  pull_request_review:
-    types: [submitted]
+  pull_request:
+    types: [closed]
 
 permissions:
   contents: read
 
 jobs:
   calculate-version:
-    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     outputs:
       package-version: ${{ steps.calculate.outputs.package-version }}
     steps:
-      - name: Checkout approved pull request
+      - name: Checkout merged pull request
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
       - name: Set up .NET
