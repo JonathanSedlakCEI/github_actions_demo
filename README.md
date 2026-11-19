@@ -23,7 +23,7 @@ A lightweight document management application with a vanilla JavaScript frontend
 └── README.md
 ```
 
-## Prerequisites 
+## Prerequisites  
 
 - Node.js 20 or later and npm
 - .NET 8 SDK
