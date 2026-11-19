@@ -2,7 +2,7 @@
 
 A lightweight document management application with a vanilla JavaScript frontend and a .NET 8 Web API backend. The library displays sample business documents with name search and category filtering; document data is owned and served by the backend.
  
-## Architecture
+## Architecture 
 
 - **Frontend:** Node.js and Express serve static HTML, CSS, and vanilla JavaScript from `frontend/public`.
 - **Backend:** ASP.NET Core Web API serves document and category data from an in-memory repository.
