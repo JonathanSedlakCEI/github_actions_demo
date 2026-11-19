@@ -41,3 +41,6 @@ jobs:
 
       - name: Build backend
         run: dotnet build backend/DocumentApi.sln --configuration Release --no-restore
+
+      - name: Test backend
+        run: dotnet test backend/DocumentApi.sln --configuration Release --no-build
