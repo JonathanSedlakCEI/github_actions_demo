@@ -60,6 +60,9 @@ jobs:
           $version = & ./scripts/Calculate-NuGetVersion.ps1 @arguments
           Write-Output "package-version=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Restore DocumentApi
+        run: dotnet restore backend/DocumentApi/DocumentApi.csproj
+
       - name: Pack versioned package
         env:
           PACKAGE_VERSION: ${{ steps.calculate.outputs.package-version }}
