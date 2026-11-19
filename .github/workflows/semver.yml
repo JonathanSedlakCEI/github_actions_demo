@@ -1,0 +1,73 @@
+name: Approved PR SemVer
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+
+jobs:
+  calculate-version:
+    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    outputs:
+      package-version: ${{ steps.calculate.outputs.package-version }}
+    steps:
+      - name: Checkout approved pull request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Detect version tags and breaking changes
+        id: changes
+        shell: bash
+        env:
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          breaking=false
+          if [[ "$PR_LABELS" == *"breaking-change"* ]]; then
+            breaking=true
+          fi
+          git fetch --tags --force
+          if git tag --points-at "$HEAD_SHA" --format='%(refname:short)' | grep -Eiq '^prerelease([.-]|$)'; then
+            prerelease=true
+          else
+            prerelease=false
+          fi
+          echo "breaking=$breaking" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+      - name: Calculate NuGet package version
+        id: calculate
+        shell: pwsh
+        env:
+          BREAKING: ${{ steps.changes.outputs.breaking }}
+          PRERELEASE: ${{ steps.changes.outputs.prerelease }}
+        run: |
+          $arguments = @{
+            TargetFrameworkMoniker = "net8"
+          }
+          if ($env:BREAKING -eq "true") { $arguments.BreakingChange = $true }
+          if ($env:PRERELEASE -eq "true") { $arguments.Prerelease = $true }
+          $version = & ./scripts/Calculate-NuGetVersion.ps1 @arguments
+          Write-Output "package-version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Pack versioned package
+        env:
+          PACKAGE_VERSION: ${{ steps.calculate.outputs.package-version }}
+        run: dotnet pack backend/DocumentApi/DocumentApi.csproj --configuration Release --no-restore -p:PackageVersion="$PACKAGE_VERSION"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DocumentApi-${{ steps.calculate.outputs.package-version }}
+          path: backend/DocumentApi/bin/Release/*.nupkg
+          if-no-files-found: error

@@ -3,5 +3,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>DocumentApi</PackageId>
+    <PackageVersion>8.0.0</PackageVersion>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Semver" Version="3.0.0" />
+  </ItemGroup>
 </Project>

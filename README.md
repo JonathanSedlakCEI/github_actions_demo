@@ -17,6 +17,7 @@ A lightweight document management application with a vanilla JavaScript frontend
 │   └── server.js               # Static-file server and API URL configuration
 ├── backend/
 │   ├── DocumentApi/            # ASP.NET Core API
+│   ├── DocumentApi.Tests/      # Focused SemVer controller tests
 │   └── DocumentApi.sln
 ├── .github/workflows/          # CI build and validation
 └── README.md
@@ -59,6 +60,7 @@ npm start
 | `GET` | `/api/documents` | All documents as a JSON array |
 | `GET` | `/api/documents/{id}` | A document, or `404 Not Found` |
 | `GET` | `/api/documents/categories` | Distinct category names |
+| `GET` | `/api/semver/validate?version=1.2.3-beta.1+build.7` | Validates and parses a semantic version |
 
 The sample repository contains documents across Finance, Human Resources, Operations, Technology, and Legal. No database or authentication is configured.
 
@@ -81,3 +83,15 @@ dotnet build backend/DocumentApi.sln --configuration Release --no-restore
 ```
 
 The GitHub Actions workflow runs the frontend checks and builds the backend separately; it does not deploy or publish packages.
+
+## NuGet semantic version policy
+
+The `DocumentApi` package uses the following repository policy:
+
+- Major: the target .NET major version (`8` for `net8.0`, `10` for `net10.0`, and so on).
+- Minor: increments only for a pull request labeled `breaking-change`.
+- Build: starts at `0` and increments for approved non-breaking package revisions.
+- Prerelease: `prerelease-##`, starting at `prerelease-01`, is created only when the approved PR's latest commit has a matching Git tag such as `prerelease` or `prerelease.01`.
+- Approved pull requests targeting `main` trigger version calculation and package packing. Unapproved and non-`main` pull requests do not produce package versions.
+
+Examples for a .NET 8 package are `8.0.0`, `8.0.1`, `8.1.0`, and `8.0.1-prerelease-01`.
