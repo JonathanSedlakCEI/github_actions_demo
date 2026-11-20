@@ -7,12 +7,18 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: documentapi-package-main
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   calculate-version:
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     outputs:
       package-version: ${{ steps.calculate.outputs.package-version }}
+      already-tagged: ${{ steps.existing-tag.outputs.already-tagged }}
     steps:
       - name: Checkout merged pull request
         uses: actions/checkout@v4
@@ -20,12 +26,28 @@ jobs:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
 
+      - name: Check for an existing package tag on this commit
+        id: existing-tag
+        shell: bash
+        env:
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          existing_tags="$(git tag --list 'DocumentApi-v*' --points-at "$MERGE_COMMIT_SHA")"
+          if [[ -n "$existing_tags" ]]; then
+            echo "already-tagged=true" >> "$GITHUB_OUTPUT"
+            echo "A DocumentApi package tag already points at $MERGE_COMMIT_SHA; skipping version calculation."
+          else
+            echo "already-tagged=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up .NET
+        if: steps.existing-tag.outputs.already-tagged == 'false'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
       - name: Detect version tags and breaking changes
+        if: steps.existing-tag.outputs.already-tagged == 'false'
         id: changes
         shell: bash
         env:
@@ -46,6 +68,7 @@ jobs:
           echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
 
       - name: Calculate NuGet package version
+        if: steps.existing-tag.outputs.already-tagged == 'false'
         id: calculate
         shell: pwsh
         env:
@@ -61,16 +84,55 @@ jobs:
           Write-Output "package-version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Restore DocumentApi
+        if: steps.existing-tag.outputs.already-tagged == 'false'
         run: dotnet restore backend/DocumentApi/DocumentApi.csproj
 
       - name: Pack versioned package
+        if: steps.existing-tag.outputs.already-tagged == 'false'
         env:
           PACKAGE_VERSION: ${{ steps.calculate.outputs.package-version }}
         run: dotnet pack backend/DocumentApi/DocumentApi.csproj --configuration Release --no-restore -p:PackageVersion="$PACKAGE_VERSION"
 
       - name: Upload package artifact
+        if: steps.existing-tag.outputs.already-tagged == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: DocumentApi-${{ steps.calculate.outputs.package-version }}
           path: backend/DocumentApi/bin/Release/*.nupkg
           if-no-files-found: error
+
+  create-package-tag:
+    needs: calculate-version
+    if: needs.calculate-version.outputs.already-tagged == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout merged pull request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      - name: Create and push package tag
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ needs.calculate-version.outputs.package-version }}
+          MERGE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -euo pipefail
+          tag="DocumentApi-v${PACKAGE_VERSION}"
+
+          if git ls-remote --exit-code --refs origin "refs/tags/$tag" >/dev/null; then
+            git fetch origin "refs/tags/$tag:refs/tags/$tag"
+            existing_commit="$(git rev-parse "$tag^{commit}")"
+            if [[ "$existing_commit" == "$MERGE_COMMIT_SHA" ]]; then
+              echo "$tag already points at $MERGE_COMMIT_SHA; nothing to do."
+              exit 0
+            fi
+            echo "Refusing to overwrite $tag, which points at $existing_commit." >&2
+            exit 1
+          fi
+
+          git tag "$tag" "$MERGE_COMMIT_SHA"
+          git push origin "refs/tags/$tag"

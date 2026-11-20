@@ -92,6 +92,7 @@ The `DocumentApi` package uses the following repository policy:
 - Minor: increments only for a pull request labeled `breaking-change`.
 - Build: starts at `0` and increments for approved non-breaking package revisions.
 - Prerelease: `prerelease-##`, starting at `prerelease-01`, is created only when the approved PR's latest commit has a matching Git tag such as `prerelease` or `prerelease.01`.
-- Approved pull requests targeting `main` trigger version calculation and package packing. Unapproved and non-`main` pull requests do not produce package versions.
+- Merged pull requests targeting `main` trigger version calculation and package packing. After a successful package build, the workflow creates and pushes a `DocumentApi-v<version>` tag on the merge commit. Re-running a workflow for a commit already tagged skips version calculation and packaging. Unmerged and non-`main` pull requests do not produce package versions.
+- The workflow uploads the package as an artifact; it does not create a GitHub Release or publish to NuGet.
 
 Examples for a .NET 8 package are `8.0.0`, `8.0.1`, `8.1.0`, and `8.0.1-prerelease-01`.
